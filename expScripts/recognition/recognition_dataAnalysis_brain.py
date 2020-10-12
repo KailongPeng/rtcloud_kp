@@ -13,12 +13,11 @@ import os
 import glob
 import shutil
 
-sub='pilot_sub001'
+sub="pilot_sub001" ; 
+homeDir="/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/" ; 
+dataDir=homeDir+"subjects/"+sub+"/ses1_recognition/nifti/"
 
-homeDir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/'
-dataDir=homeDir+f'subjects/{sub}/ses1_recognition/nifti/'
-
-tmp_folder = f'/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/{sub}' # tmp_folder='/tmp/kp578/'
+tmp_folder = "/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/" + sub # tmp_folder='/tmp/kp578/'
 if os.path.isdir(tmp_folder):
 	shutil.rmtree(tmp_folder)
 os.mkdir(tmp_folder)
@@ -85,6 +84,7 @@ templateFunctionalVolume=functionalFiles[int(len(functionalFiles)/2)]
 # align every other functional volume with templateFunctionalVolume
 data=[]
 for curr_TR in functionalFiles:
+	print('curr_TR=',curr_TR)
 	TR_FunctionalTemplateSpace=f"{curr_TR[0:-7]}_FunctionalTemplateSpace.nii.gz"
 	command = f"3dvolreg \
 	-base {templateFunctionalVolume} \
@@ -105,4 +105,5 @@ recognitionData=np.asarray(data)
 recognitionData=recognitionData.reshape(recognitionData.shape[0],-1)
 print("shape of recognitionData=",recognitionData.shape)
 np.save(dataDir+'recognitionData',recognitionData)
+
 

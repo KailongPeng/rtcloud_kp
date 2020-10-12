@@ -12,3 +12,7 @@
 *.dicom
 *.DICOM
 *.json
+*.gif
+*.xml
+*.dcm
+

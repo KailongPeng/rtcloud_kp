@@ -19,6 +19,11 @@ def get_brain_data_recognition(sub='pilot_sub001',run='01'):
 	homeDir="/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/" 
 	dataDir=f"{homeDir}subjects/{sub}/ses1_recognition/run{run}/nifti/"
 
+	# if the data have been analyzed, load the saved data.
+	if os.path.exists(dataDir+'recognitionData.npy'):
+		recognitionData=np.load(dataDir+'recognitionData.npy')
+		return recognitionData
+
 	tmp_folder = "/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/" + sub # tmp_folder='/tmp/kp578/'
 	if os.path.isdir(tmp_folder):
 		shutil.rmtree(tmp_folder)
@@ -81,7 +86,7 @@ def get_brain_data_recognition(sub='pilot_sub001',run='01'):
 	recognitionData=np.asarray(data)
 	recognitionData=recognitionData.reshape(recognitionData.shape[0],-1)
 	print("shape of recognitionData=",recognitionData.shape)
-	np.save(dataDir+'recognitionData',recognitionData)
+	np.save(dataDir+'recognitionData.npy',recognitionData)
 
 
 	return recognitionData

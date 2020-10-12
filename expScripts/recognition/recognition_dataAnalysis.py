@@ -46,7 +46,6 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 	for curr_trial in range(behav_data.shape[0]):
 	    labels.append(imcodeDict[behav_data['Item'].iloc[curr_trial]])
 
-
 	## - brain data analysis
 	from recognition_dataAnalysis_brain import recognition_dataAnalysis_brain
 	brain_data = recognition_dataAnalysis_brain(sub=sub,run=run) # corresponding brain_data which is M TR x N voxels
@@ -60,17 +59,6 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 	brain_data=brain_data[Brain_TR]
 
 	# This M x N brain_data and M labels
-
 	return brain_data, labels
 
-
-
-
-
-
-
-
-
-
-
-
+recognition_dataAnalysis(sub='pilot_sub001',run='01')

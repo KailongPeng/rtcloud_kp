@@ -2,20 +2,28 @@
 
 ## - behavior data analysis
 import pandas as pd
-workingDir='/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/'
-subjectID='test'
+import numpy as np
+import os
+if 'milgram' in os.getcwd():
+	main_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/'
+else:
+	main_dir='/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/'
+
+subjectID='pilot001'
 run=1
-datapath=f'recognition/data/recognition/{subjectID}_{run}_.csv'
-behav_data=pd.read_csv(workingDir+datapath)
+datapath=main_dir+f'subjects/pilot_sub001/ses1_recognition/{subjectID}_{run}.csv'
+behav_data=pd.read_csv(datapath)
 
 # the item(imcode) colume of the data represent each image in the following correspondence
-imcodeDict={'A': 'bed',
+imcodeDict={
+'A': 'bed',
 'B': 'Chair',
 'C': 'table',
 'D': 'bench'}
 
 # When the imcode code is "A", the correct response should be '1', "B" should be '2'
-correctResponseDict={'A': 1,
+correctResponseDict={
+'A': 1,
 'B': 2,
 'C': 1,
 'D': 2}
@@ -28,13 +36,14 @@ behav_data=behav_data.dropna(subset=['Item'])
 isCorrect=[]
 for curr_trial in range(behav_data.shape[0]):
     isCorrect.append(correctResponseDict[behav_data['Item'].iloc[curr_trial]]==behav_data['Resp'].iloc[curr_trial])
+
 behav_data['isCorrect']=isCorrect # merge the isCorrect clumne with the data dataframe
-behav_data=behav_data[behav_data['isCorrect']] #discard the trials where the subject made wrong selection
+behav_data=behav_data[behav_data['isCorrect']] # discard the trials where the subject made wrong selection
 
 labels=[]
 # get the labels I need for the output of this function
 for curr_trial in range(behav_data.shape[0]):
-    labels.append(imcodeDict[behav_data['Item'].ilod[curr_trial]])
+    labels.append(imcodeDict[behav_data['Item'].iloc[curr_trial]])
 
 
 

@@ -5,3 +5,5 @@
 *.psydat
 *.npy
 *.pyc
+*.ipynb
+

@@ -2,7 +2,7 @@
 # and activate_rt
 # The purpose of this script is to analyze the data from recognition run
 
-def get_brain_data_recognition(sub='pilot_sub001',run='01'):
+def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01'): # normally sub should be sub001
 
 	# import and set up environment
 	from subprocess import call

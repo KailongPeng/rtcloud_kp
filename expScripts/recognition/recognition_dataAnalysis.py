@@ -39,12 +39,14 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 	    isCorrect.append(correctResponseDict[behav_data['Item'].iloc[curr_trial]]==behav_data['Resp'].iloc[curr_trial])
 
 	behav_data['isCorrect']=isCorrect # merge the isCorrect clumne with the data dataframe
+	behav_data['subj']=[sub for i in range(len(behav_data))]
+	behav_data['run_num']=[int(run) for i in range(len(behav_data))]
 	behav_data=behav_data[behav_data['isCorrect']] # discard the trials where the subject made wrong selection
 
-	labels=[]
-	# get the labels I need for the output of this function
-	for curr_trial in range(behav_data.shape[0]):
-	    labels.append(imcodeDict[behav_data['Item'].iloc[curr_trial]])
+	# labels=[]
+	# # get the labels I need for the output of this function
+	# for curr_trial in range(behav_data.shape[0]):
+	#     labels.append(imcodeDict[behav_data['Item'].iloc[curr_trial]])
 
 	## - brain data analysis
 	from recognition_dataAnalysis_brain import recognition_dataAnalysis_brain
@@ -58,7 +60,17 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 	Brain_TR=Brain_TR[list(behav_data['TR'])]
 	brain_data=brain_data[Brain_TR]
 
-	# This M x N brain_data and M labels
-	return brain_data, labels
+	# create the META file:
 
-recognition_dataAnalysis(sub='pilot_sub001',run='01')
+	# This M x N brain_data and M labels are brain_data and labels
+	# The input of the model training function offlineModel.py is M x N brain data and M 
+	# labels in the format of 
+
+	return brain_data, behav_data
+
+for run in ['01']:
+	brain_data, behav_data = recognition_dataAnalysis(sub='pilot_sub001',run=run)
+
+
+
+

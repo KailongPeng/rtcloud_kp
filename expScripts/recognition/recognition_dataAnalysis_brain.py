@@ -90,3 +90,5 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01'): # normally sub 
 
 
 	return recognitionData
+
+	

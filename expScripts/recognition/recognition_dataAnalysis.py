@@ -2,10 +2,11 @@
 
 ## - How to run this code:
 # milgram
-# activate_rt
 # cd_rtcloud_kp
 # cd expScripts/recognition/
-# python recognition_dataAnalysis
+# run
+# activate_rt
+# python recognition_dataAnalysis.py
 
 # parameters of this code:
 def recognition_dataAnalysis(sub='pilot_sub001',run='01',ses=1): # normally sub should be sub001
@@ -75,7 +76,10 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01',ses=1): # normally sub 
 	# This M x N brain_data and M labels are brain_data and labels
 	# The input of the model training function offlineModel.py is M x N brain data and M 
 	# labels in the format of 
+	np.save(main_dir+f'subjects/{sub}/ses{ses}_recognition/run{run}/{sub}_{run}_preprocessed_brainData.npy',
+		brain_data)
 
+	behav_data.to_csv(main_dir+f'subjects/{sub}/ses{ses}_recognition/run{run}/{sub}_{run}_preprocessed_behavData.csv')
 	return brain_data, behav_data
 
 sub='pilot_sub001'
@@ -83,8 +87,10 @@ run='01'
 ses=1
 for run in ['01']:
 	brain_data, behav_data = recognition_dataAnalysis(sub=sub,run=run,ses=ses)
-
+print('behav_data=',behav_data)
+print('brain_data.shape=',brain_data.shape)
 from offlineModel import offlineModel
+print('running model training')
 offlineModel(sub=sub,ses=ses,testRun=None, FEAT=brain_data, META=behav_data)
 
 

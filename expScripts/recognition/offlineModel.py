@@ -11,7 +11,7 @@
 #     then to day1 template functional volume
 
 def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
-	# input of this function should be the brain and behavior data
+	# input of this function should be the brain and behavior data 
 	# output of this function should be files saved in subject data folder in current session
 	import os
 	import numpy as np
@@ -39,12 +39,12 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	    return other_objs
 
 	def red_vox(n_vox, prop=0.1):
-		# Find the number of voxels that will be left given your inclusion parameter 'include'
+	    # Find the number of voxels that will be left given your inclusion parameter 'include'
 	    return int(np.ceil(n_vox * prop))
 
 	def get_inds(X, Y, pair, run=None):
-		'''
-		INPUT: 
+	    '''
+	    INPUT: 
 	    X: brain activity
 	    Y: labels
 	    pair: the current working pair, e.g: bed chair
@@ -56,11 +56,8 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	    is the importance of each voxel sorted as from least to most important for a 
 	    given category.
 
-		'''
-
-
+	    '''
 	    inds = {}
-	    
 	    # return relative indices
 	    if run: # in the case when run=6, the 6th run is left as test data, others as training data
 	        trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(run))]
@@ -146,66 +143,66 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	run = testRun # this used to be 6, which means use the 6th run as the testing data and other as training data.
 
 	# Decide on the proportion of crescent data to use for classification
-	include = 1	    
-    allpairs = itertools.combinations(objects,2)
-    
-    # Iterate over all the possible target pairs of objects
-    for pair in allpairs: # e.g pair is AB or AC or AD or BC or BD or CD
-        # Find the control (remaining) objects for this pair
-        altpair = other(pair) # e.g. when pair is AB, altpair is CD
-        
-        # pull sorted indices for each of the critical objects, in order of importance (low to high)
-        inds = get_inds(FEAT, META, pair, run=run)
-        
-        # Find the number of voxels that will be left given your inclusion parameter above
-        nvox = red_vox(FEAT.shape[1], include)
-        
-        for obj in pair: # e.g.obj is A or B
-            # foil = [i for i in pair if i != obj][0]
-            for altobj in altpair:
-                
-                # establish a naming convention where it is $TARGET_$CLASSIFICATION
-                # Target is the NF pair (e.g. bed/bench)
-                # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
-                naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
-                # for the pair AB, posible combinations are AB_AC AB_AD AB_BC AB_BD, the classification 
-                # is done between obj, altobj, pair is only for the purpose of organizning the loop
-                
-                # Pull the relevant inds from your previously established dictionary 
-                obj_inds = inds[obj]
-                
-                # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
-                if run:
-                    trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(run))]
-                    testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(run))]
-                else:
-                    trainIX = META.index[(META['label'].isin([obj, altobj]))]
-                    testIX = META.index[(META['label'].isin([obj, altobj]))]
+	include = 1  
+	allpairs = itertools.combinations(objects,2)
 
-                # pull training and test data
-                trainX = FEAT[trainIX]
-                testX = FEAT[testIX]
-                trainY = META.iloc[trainIX].label
-                testY = META.iloc[testIX].label
-                
-                # If you're selecting high-importance features, this bit handles that
-                if include < 1:
-                    trainX = trainX[:, obj_inds[-nvox:]] # only use the most important map
-                    testX = testX[:, obj_inds[-nvox:]]
-                
-                # Train your classifier
-                clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                         multi_class='multinomial').fit(trainX, trainY)
-                
-                # Save it for later use
-                savedModelFolder=f"subjects/{sub}/ses{ses}_recognition/"
-                if not os.path.isdir(savedModelFolder+'clf'):
-                	os.mkdir(workding_dir+'clf')
-                joblib.dump(clf, workding_dir+'clf/{}_{}.joblib'.format(sub, naming))
-                
-                # Monitor progress by printing accuracy (only useful if you're running a test set aka when run is not None)
-                acc = clf.score(testX, testY)
-                print(naming, acc)
+	# Iterate over all the possible target pairs of objects
+	for pair in allpairs: # e.g pair is AB or AC or AD or BC or BD or CD
+	    # Find the control (remaining) objects for this pair
+	    altpair = other(pair) # e.g. when pair is AB, altpair is CD
+	    
+	    # pull sorted indices for each of the critical objects, in order of importance (low to high)
+	    inds = get_inds(FEAT, META, pair, run=run)
+	    
+	    # Find the number of voxels that will be left given your inclusion parameter above
+	    nvox = red_vox(FEAT.shape[1], include)
+	    
+	    for obj in pair: # e.g.obj is A or B
+	        # foil = [i for i in pair if i != obj][0]
+	        for altobj in altpair:
+	            
+	            # establish a naming convention where it is $TARGET_$CLASSIFICATION
+	            # Target is the NF pair (e.g. bed/bench)
+	            # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
+	            naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
+	            # for the pair AB, posible combinations are AB_AC AB_AD AB_BC AB_BD, the classification 
+	            # is done between obj, altobj, pair is only for the purpose of organizning the loop
+	            
+	            # Pull the relevant inds from your previously established dictionary 
+	            obj_inds = inds[obj]
+	            
+	            # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
+	            if run:
+	                trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(run))]
+	                testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(run))]
+	            else:
+	                trainIX = META.index[(META['label'].isin([obj, altobj]))]
+	                testIX = META.index[(META['label'].isin([obj, altobj]))]
+
+	            # pull training and test data
+	            trainX = FEAT[trainIX]
+	            testX = FEAT[testIX]
+	            trainY = META.iloc[trainIX].label
+	            testY = META.iloc[testIX].label
+	            
+	            # If you're selecting high-importance features, this bit handles that
+	            if include < 1:
+	                trainX = trainX[:, obj_inds[-nvox:]] # only use the most important map
+	                testX = testX[:, obj_inds[-nvox:]]
+	            
+	            # Train your classifier
+	            clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+	                                     multi_class='multinomial').fit(trainX, trainY)
+	            
+	            # Save it for later use
+	            savedModelFolder=f"subjects/{sub}/ses{ses}_recognition/"
+	            if not os.path.isdir(savedModelFolder+'clf'):
+	            	os.mkdir(workding_dir+'clf')
+	            joblib.dump(clf, workding_dir+'clf/{}_{}.joblib'.format(sub, naming))
+	            
+	            # Monitor progress by printing accuracy (only useful if you're running a test set aka when run is not None)
+	            acc = clf.score(testX, testY)
+	            print(naming, acc)
 
 
 

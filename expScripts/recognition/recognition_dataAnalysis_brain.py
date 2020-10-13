@@ -86,7 +86,7 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01'): # normally sub 
 	recognitionData=np.asarray(data)
 	recognitionData=recognitionData.reshape(recognitionData.shape[0],-1)
 	print("shape of recognitionData=",recognitionData.shape)
-	np.save(dataDir+'recognitionData.npy',recognitionData)
+	# np.save(dataDir+'recognitionData.npy',recognitionData)
 
 
 	return recognitionData

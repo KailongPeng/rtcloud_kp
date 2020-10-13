@@ -1,7 +1,14 @@
 ## - recognition data analysis for behavior data and brain data
 
+## - How to run this code:
+# milgram
+# activate_rt
+# cd_rtcloud_kp
+# cd expScripts/recognition/
+# python recognition_dataAnalysis
+
 # parameters of this code:
-def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should be sub001
+def recognition_dataAnalysis(sub='pilot_sub001',run='01',ses=1): # normally sub should be sub001
 
 	# loading packages and general paths
 	import pandas as pd
@@ -12,7 +19,7 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 	else:
 		main_dir='/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/'
 
-	datapath=main_dir+f'subjects/{sub}/ses1_recognition/run{run}/{sub}_{run}.csv'
+	datapath=main_dir+f'subjects/{sub}/ses{ses}_recognition/run{run}/{sub}_{run}.csv'
 	behav_data=pd.read_csv(datapath)
 
 	# the item(imcode) colume of the data represent each image in the following correspondence
@@ -52,6 +59,9 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 	from recognition_dataAnalysis_brain import recognition_dataAnalysis_brain
 	brain_data = recognition_dataAnalysis_brain(sub=sub,run=run) # corresponding brain_data which is M TR x N voxels
 
+	# for offline model, high-pass filtering and Kalman filtering should be implemented here.
+
+
 	# brain data is first aligned by pushed back 2TR(4s)
 	Brain_TR=np.arange(brain_data.shape[0])
 	Brain_TR = Brain_TR+2
@@ -68,9 +78,14 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01'): # normally sub should
 
 	return brain_data, behav_data
 
+sub='pilot_sub001'
+run='01'
+ses=1
 for run in ['01']:
-	brain_data, behav_data = recognition_dataAnalysis(sub='pilot_sub001',run=run)
+	brain_data, behav_data = recognition_dataAnalysis(sub=sub,run=run,ses=ses)
 
+from offlineModel import offlineModel
+offlineModel(sub=sub,ses=ses,testRun=None, FEAT=brain_data, META=behav_data)
 
 
 

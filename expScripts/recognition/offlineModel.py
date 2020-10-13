@@ -10,7 +10,9 @@
 #     realtime volume to day2 template functional volume
 #     then to day1 template functional volume
 
-def offlineModel(sub='sub001',ses='01',testRun=None):
+def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
+	# input of this function should be the brain and behavior data
+	# output of this function should be files saved in subject data folder in current session
 	import os
 	import numpy as np
 	import pandas as pd
@@ -100,146 +102,142 @@ def offlineModel(sub='sub001',ses='01',testRun=None):
 	             
 	    return inds
 
-	data_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/'
-	workding_dir='/gpfs/milgram/project/turk-browne/users/kp578/realtime/Anne/'
-	files = os.listdir(data_dir+'features')
-	feats = [i for i in files if 'metadata' not in i]
-	subjects = np.unique([i.split('_')[0] for i in feats])
+	# data_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/'
+	# workding_dir='/gpfs/milgram/project/turk-browne/users/kp578/realtime/Anne/'
+	# files = os.listdir(data_dir+'features')
+	# feats = [i for i in files if 'metadata' not in i]
+	# subjects = np.unique([i.split('_')[0] for i in feats])
 
 	# If you want to reduce the number of subjects used for testing purposes
-	subs=4
-	subjects = subjects[:subs]
-	print(subjects)
+	# subs=4
+	# subjects = subjects[:subs]
+	# print(subjects)
 
-	roi = 'V1'
+	# roi = 'V1'
 	highdict = {}
 	scoredict = {}
 
 	objects = ['bed', 'bench', 'chair', 'table']
 	phases = ['12', '34', '56']
 
-	# THIS CELL READS IN ALL OF THE PARTICIPANTS' DATA and fills into dictionary
-	FEATDICT = {}
-	METADICT = {}
-	for si, sub in enumerate(subjects[:]):
-	    print('{}/{}'.format(si+1, subs))
-	    diffs = []
-	    scores = []
-	    subcount = 0
-	    for phase in phases:
-	        _feat = np.load(data_dir+'features/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
-	        _feat = normalize(_feat)
-	        _meta = pd.read_csv(data_dir+'features/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
-	        FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
-	        META = _meta if phase == "12" else pd.concat((META, _meta))
-	    META = META.reset_index(drop=True)
+	# # THIS CELL READS IN ALL OF THE PARTICIPANTS' DATA and fills into dictionary
+	# FEATDICT = {}
+	# METADICT = {}
+	# for si, sub in enumerate(subjects[:]):
+	#     print('{}/{}'.format(si+1, subs))
+	#     diffs = []
+	#     scores = []
+	#     subcount = 0
+	#     for phase in phases:
+	#         _feat = np.load(data_dir+'features/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
+	#         _feat = normalize(_feat)
+	#         _meta = pd.read_csv(data_dir+'features/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
+	#         FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
+	#         META = _meta if phase == "12" else pd.concat((META, _meta))
+	#     META = META.reset_index(drop=True)
 
-	    assert FEAT.shape[0] == META.shape[0]
+	#     assert FEAT.shape[0] == META.shape[0]
 	    
-	    METADICT[sub] = META
-	    FEATDICT[sub] = FEAT
-	    clear_output(wait=True)
+	#     METADICT[sub] = META
+	#     FEATDICT[sub] = FEAT
+	#     clear_output(wait=True)
 
 	# Which run to use as test data (leave as None to not have test data)
 	run = testRun # this used to be 6, which means use the 6th run as the testing data and other as training data.
 
 	# Decide on the proportion of crescent data to use for classification
-	include = 1
-	for sub in subjects:
-	    print(sub)
-	    META = METADICT[sub]
-	    FEAT = FEATDICT[sub]
-	    
-	    allpairs = itertools.combinations(objects,2)
-	    
-	    # Iterate over all the possible target pairs of objects
-	    for pair in allpairs: # e.g pair is AB or AC or AD or BC or BD or CD
-	        # Find the control (remaining) objects for this pair
-	        altpair = other(pair) # e.g. when pair is AB, altpair is CD
-	        
-	        # pull sorted indices for each of the critical objects, in order of importance (low to high)
-	        inds = get_inds(FEAT, META, pair, run=run)
-	        
-	        # Find the number of voxels that will be left given your inclusion parameter above
-	        nvox = red_vox(FEAT.shape[1], include)
-	        
-	        for obj in pair: # e.g.obj is A or B
-	            # foil = [i for i in pair if i != obj][0]
-	            for altobj in altpair:
-	                
-	                # establish a naming convention where it is $TARGET_$CLASSIFICATION
-	                # Target is the NF pair (e.g. bed/bench)
-	                # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
-	                naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
-	                # for the pair AB, posible combinations are AB_AC AB_AD AB_BC AB_BD, the classification 
-	                # is done between obj, altobj, pair is only for the purpose of organizning the loop
-	                
-	                # Pull the relevant inds from your previously established dictionary 
-	                obj_inds = inds[obj]
-	                
-	                # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
-	                if run:
-	                    trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(run))]
-	                    testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(run))]
-	                else:
-	                    trainIX = META.index[(META['label'].isin([obj, altobj]))]
-	                    testIX = META.index[(META['label'].isin([obj, altobj]))]
+	include = 1	    
+    allpairs = itertools.combinations(objects,2)
+    
+    # Iterate over all the possible target pairs of objects
+    for pair in allpairs: # e.g pair is AB or AC or AD or BC or BD or CD
+        # Find the control (remaining) objects for this pair
+        altpair = other(pair) # e.g. when pair is AB, altpair is CD
+        
+        # pull sorted indices for each of the critical objects, in order of importance (low to high)
+        inds = get_inds(FEAT, META, pair, run=run)
+        
+        # Find the number of voxels that will be left given your inclusion parameter above
+        nvox = red_vox(FEAT.shape[1], include)
+        
+        for obj in pair: # e.g.obj is A or B
+            # foil = [i for i in pair if i != obj][0]
+            for altobj in altpair:
+                
+                # establish a naming convention where it is $TARGET_$CLASSIFICATION
+                # Target is the NF pair (e.g. bed/bench)
+                # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
+                naming = '{}{}_{}{}'.format(pair[0], pair[1], obj, altobj)
+                # for the pair AB, posible combinations are AB_AC AB_AD AB_BC AB_BD, the classification 
+                # is done between obj, altobj, pair is only for the purpose of organizning the loop
+                
+                # Pull the relevant inds from your previously established dictionary 
+                obj_inds = inds[obj]
+                
+                # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
+                if run:
+                    trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(run))]
+                    testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(run))]
+                else:
+                    trainIX = META.index[(META['label'].isin([obj, altobj]))]
+                    testIX = META.index[(META['label'].isin([obj, altobj]))]
 
-	                # pull training and test data
-	                trainX = FEAT[trainIX]
-	                testX = FEAT[testIX]
-	                trainY = META.iloc[trainIX].label
-	                testY = META.iloc[testIX].label
-	                
-	                # If you're selecting high-importance features, this bit handles that
-	                if include < 1:
-	                    trainX = trainX[:, obj_inds[-nvox:]] # only use the most important map
-	                    testX = testX[:, obj_inds[-nvox:]]
-	                
-	                # Train your classifier
-	                clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-	                                         multi_class='multinomial').fit(trainX, trainY)
-	                
-	                # Save it for later use
-	                if not os.path.isdir(workding_dir+'clf'):
-	                	os.mkdir(workding_dir+'clf')
-	                joblib.dump(clf, workding_dir+'clf/{}_{}.joblib'.format(sub, naming))
-	                
-	                # Monitor progress by printing accuracy (only useful if you're running a test set aka when run is not None)
-	                acc = clf.score(testX, testY)
-	                print(naming, acc)
+                # pull training and test data
+                trainX = FEAT[trainIX]
+                testX = FEAT[testIX]
+                trainY = META.iloc[trainIX].label
+                testY = META.iloc[testIX].label
+                
+                # If you're selecting high-importance features, this bit handles that
+                if include < 1:
+                    trainX = trainX[:, obj_inds[-nvox:]] # only use the most important map
+                    testX = testX[:, obj_inds[-nvox:]]
+                
+                # Train your classifier
+                clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                                         multi_class='multinomial').fit(trainX, trainY)
+                
+                # Save it for later use
+                savedModelFolder=f"subjects/{sub}/ses{ses}_recognition/"
+                if not os.path.isdir(savedModelFolder+'clf'):
+                	os.mkdir(workding_dir+'clf')
+                joblib.dump(clf, workding_dir+'clf/{}_{}.joblib'.format(sub, naming))
+                
+                # Monitor progress by printing accuracy (only useful if you're running a test set aka when run is not None)
+                acc = clf.score(testX, testY)
+                print(naming, acc)
 
 
 
-##################################################################
-##################################################################
-##################################################################
-##################################################################
-######################use the trained model#######################
-##################################################################
-##################################################################
-##################################################################
-##################################################################
-# This part should be integrated into the rtcloud framework, and finnaly send the 
-# calculated NFparam metric to the display code using 
-# WsFeedbackReceiver.startReceiverThread(rt-cloud/rtCommon/feedbackReceiver.py)
+# ##################################################################
+# ##################################################################
+# ##################################################################
+# ##################################################################
+# ######################use the trained model#######################
+# ##################################################################
+# ##################################################################
+# ##################################################################
+# ##################################################################
+# # This part should be integrated into the rtcloud framework, and finnaly send the 
+# # calculated NFparam metric to the display code using 
+# # WsFeedbackReceiver.startReceiverThread(rt-cloud/rtCommon/feedbackReceiver.py)
 
 
-# This function is how you would load a saved classifier for a given subject, target axis and control classifier
-clf = joblib.load(workding_dir+'clf/1206162_bedbench_bedtable.joblib') 
+# # This function is how you would load a saved classifier for a given subject, target axis and control classifier
+# clf = joblib.load(workding_dir+'clf/1206162_bedbench_bedtable.joblib') 
 
-# Test the classifier on a new TR (assuming X has shape [1, nvox], and Y is [label]
-# X AND Y WILL NEED REPLACED
-acc = clf.score(X, Y)
+# # Test the classifier on a new TR (assuming X has shape [1, nvox], and Y is [label]
+# # X AND Y WILL NEED REPLACED
+# acc = clf.score(X, Y)
 
-# If running NF to try to activate table during bench for subject 0118171, you would do this prior to starting:
-# naming convention where it is $TARGET_$CLASSIFICATION
-# Target is the NF pair (e.g. bed/bench)
-# Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
-clf1 = joblib.load(workding_dir+'clf/0118171_benchtable_tablebed.joblib') 
-clf2 = joblib.load(workding_dir+'clf/0118171_benchtable_tablechair.joblib') 
+# # If running NF to try to activate table during bench for subject 0118171, you would do this prior to starting:
+# # naming convention where it is $TARGET_$CLASSIFICATION
+# # Target is the NF pair (e.g. bed/bench)
+# # Classificationis is btw one of the targets, and a control (e.g. bed/chair, or bed/table, NOT bed/bench)
+# clf1 = joblib.load(workding_dir+'clf/0118171_benchtable_tablebed.joblib') 
+# clf2 = joblib.load(workding_dir+'clf/0118171_benchtable_tablechair.joblib') 
 
-# then do this for each TR
-s1 = clf1.score(newTR, ['table'])
-s2 = clf2.score(newTR, ['table'])
-NFparam = s1 + s2 # or an average or whatever
+# # then do this for each TR
+# s1 = clf1.score(newTR, ['table'])
+# s2 = clf2.score(newTR, ['table'])
+# NFparam = s1 + s2 # or an average or whatever

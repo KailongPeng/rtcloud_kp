@@ -244,8 +244,9 @@ feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParamete
 
 # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
 parameters=pd.read_csv(feedbackParameterFileName)
-while np.isnan(parameters['value'].iloc[-1]):
+while os.path.exists(feedbackParameterFileName) or np.isnan(parameters['value'].iloc[-1]):
     time.sleep(0.005)
+    print('waiting')
 curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
@@ -264,7 +265,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             parameter=parameters['value'].iloc[curr_parameter]
             print('curr_parameter=',curr_parameter)
             print('parameter=',parameter)
-            
+
             curr_parameter=curr_parameter+1
             # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
             trialClock=core.Clock()

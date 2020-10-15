@@ -190,7 +190,12 @@ if __name__ == "__main__":
     sub = args.sub
     ses = args.ses
     run = args.run
-    parameterWriteFile = f"subjects/{sub}/ses{ses}_feedbackParameter/run_{run}.csv"
+    if 'watts' in os.getcwd():
+        main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+    else:
+        main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
+
+    parameterWriteFile = main_dir+f"subjects/{sub}/ses{ses}_feedbackParameter/run_{run}.csv"
 
     if not os.path.isdir(f"subjects/{sub}"):
         os.mkdir(f"subjects/{sub}")

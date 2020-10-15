@@ -257,6 +257,9 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         if states[0] == 'feedback' and newWobble[0]==1:
             # fetch parameter from preprocessing process on Milgram            
             parameters=pd.read_csv(feedbackParameterFileName)
+            while np.isnan(parameters['value'].iloc[curr_parameter]):
+                time.sleep(0.05)
+
             parameter=parameters['value'].iloc[curr_parameter]
 
             curr_parameter=curr_parameter+1

@@ -197,10 +197,10 @@ if __name__ == "__main__":
 
     parameterWriteFile = main_dir+f"subjects/{sub}/ses{ses}_feedbackParameter/run_{run}.csv"
 
-    if not os.path.isdir(f"subjects/{sub}"):
-        os.mkdir(f"subjects/{sub}")
-    if not os.path.isdir(f"subjects/{sub}/ses{ses}_feedbackParameter/"):
-        os.mkdir(f"subjects/{sub}/ses{ses}_feedbackParameter/")
+    if not os.path.isdir(f"{main_dir}subjects/{sub}"):
+        os.mkdir(f"{main_dir}subjects/{sub}")
+    if not os.path.isdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/"):
+        os.mkdir(f"{main_dir}subjects/{sub}/ses{ses}_feedbackParameter/")
 
     # Check if the ssl certificate is valid for this server address
     if checkSSLCertAltName(certFile, addr) is False:

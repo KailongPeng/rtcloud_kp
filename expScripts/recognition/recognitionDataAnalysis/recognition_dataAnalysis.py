@@ -28,10 +28,11 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 	homeDir="/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/" 
 	dataDir=f"{homeDir}subjects/{sub}/ses{ses}_recognition/run{run}/nifti/"
 
-	# if the data have been analyzed, load the saved data.
-	if os.path.exists(dataDir+'recognitionData.npy'):
-		recognitionData=np.load(dataDir+'recognitionData.npy')
-		return recognitionData
+	# # if the data have been analyzed, load the saved data.
+	# if os.path.exists(dataDir+'recognitionData.npy'):
+	# 	print(f'({dataDir}+recognitionData.npy exist')
+	# 	recognitionData=np.load(dataDir+'recognitionData.npy')
+	# 	return recognitionData
 
 	tmp_folder = "/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/" + sub # tmp_folder='/tmp/kp578/'
 	if os.path.isdir(tmp_folder):
@@ -47,7 +48,7 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 		return ref_bold_ornt
 
 	# # fetch data from XNAT
-	if sub==pilot_sub001:
+	if sub=='pilot_sub001':
 		subjectID="rtSynth_pilot001"
 		anatomical=dataDir+'rtSynth_pilot001_20201009165148_8.nii'
 		functional=dataDir+'rtSynth_pilot001_20201009165148_13.nii'
@@ -61,8 +62,9 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 	# call(f"sbatch change2nifti.sh {subjectID}",shell=True) # convert dicom to nifti files
 
 	# copy the functional data to tmp folder 
-	os.mkdir(tmp_folder+subjectID) # the intermediate data are saved in scratch folder, only original data and final results are saved in project folder
-	call(f"cp {functional} {tmp_folder}{subjectID}/",shell=True)
+	if not os.path.isdir(tmp_folder+subjectID):
+		os.mkdir(tmp_folder+subjectID) # the intermediate data are saved in scratch folder, only original data and final results are saved in project folder
+		call(f"cp {functional} {tmp_folder}{subjectID}/",shell=True)
 
 	# split functional data to multiple volumes
 	call(f"fslsplit {tmp_folder}{subjectID}/{functional.split('/')[-1]}  {tmp_folder}{subjectID}/",shell=True) ## os.chdir(f"{tmp_folder}{subjectID}/")
@@ -71,8 +73,9 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 
 	# select the middle volume as the template functional volume
 	templateFunctionalVolume=functionalFiles[int(len(functionalFiles)/2)]
-
-	call(f'cp {templateFunctionalVolume} {dataDir}/templateFunctionalVolume.nii.gz',shell=True)
+	command=f'cp {templateFunctionalVolume} {dataDir}/templateFunctionalVolume.nii.gz'
+	print('running ',command)
+	call(command,shell=True)
 
 	# align every other functional volume with templateFunctionalVolume
 	data=[]

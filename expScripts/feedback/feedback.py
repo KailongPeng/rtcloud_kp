@@ -16,14 +16,12 @@ import time
 import re
 alpha = string.ascii_uppercase
 
-
-main_dir="../../"
-
+main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
 
 # startup parameters
-IDnum = 'pilot_sub001' #sys.argv[1] # this is the name of the subject
-sess = 2 # int(sys.argv[2]) which session is this in? by design this can be 2 3 4 
-run = 1 #int(sys.argv[3]) # which run is this in
+IDnum = sys.argv[1] #'pilot_sub001' # # this is the name of the subject
+sess = int(sys.argv[2]) #2 #  which session is this in? by design this can be 2 3 4 
+run = sys.argv[3] #1 # # which run is this in
 scanmode = 'Test'  # 'Scan' or 'Test' or None
 screenmode = False  # fullscr True or False
 
@@ -39,7 +37,7 @@ step=3 #in simulation, how quickly the morph changes ramp up. Note this is only 
 
 # trial_list designing parameters
 TR=2 # the length of a TR is 2s
-parameterRange=np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
+parameterRange=np.arange(1,5) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
 TrialNumber=4 #how many trials are required
 

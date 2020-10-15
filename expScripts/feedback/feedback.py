@@ -243,10 +243,16 @@ remainImageNumber=[]
 feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParameter/run_{run}.csv"
 
 # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
-parameters=pd.read_csv(feedbackParameterFileName)
-while not os.path.exists(feedbackParameterFileName) or np.isnan(parameters['value'].iloc[-1]):
+
+while not os.path.exists(feedbackParameterFileName):
     time.sleep(0.005)
     print('waiting')
+
+parameters=pd.read_csv(feedbackParameterFileName)
+while np.isnan(parameters['value'].iloc[-1]):
+    time.sleep(0.005)
+    print('waiting')
+
 curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()

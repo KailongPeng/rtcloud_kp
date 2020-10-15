@@ -16,7 +16,10 @@ import time
 import re
 alpha = string.ascii_uppercase
 
-main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
+if 'watts' in os.getcwd():
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+else:
+    main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
 
 # startup parameters
 IDnum = sys.argv[1] #'pilot_sub001' # # this is the name of the subject

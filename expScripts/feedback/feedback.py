@@ -246,12 +246,12 @@ feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParamete
 
 while not os.path.exists(feedbackParameterFileName):
     time.sleep(0.005)
-    print('waiting')
+    print(f'waiting {feedbackParameterFileName}')
 
 parameters=pd.read_csv(feedbackParameterFileName)
 while np.isnan(parameters['value'].iloc[-1]):
     time.sleep(0.005)
-    print('waiting')
+    print(f'waiting {parameters['value'].iloc[-1]}')
 
 curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:

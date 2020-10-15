@@ -99,10 +99,11 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	             
 	    return inds
 
-	# data_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/'
-	# workding_dir='/gpfs/milgram/project/turk-browne/users/kp578/realtime/Anne/'
-	# files = os.listdir(data_dir+'features')
-	# feats = [i for i in files if 'metadata' not in i]
+    tmp_folder = f"/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/{sub}_run{run}"
+	data_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/'
+	workding_dir='/gpfs/milgram/project/turk-browne/users/kp578/realtime/Anne/'
+	files = os.listdir(data_dir+'features')
+	feats = [i for i in files if 'metadata' not in i]
 	# subjects = np.unique([i.split('_')[0] for i in feats])
 
 	# If you want to reduce the number of subjects used for testing purposes
@@ -117,27 +118,27 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	objects = ['bed', 'bench', 'chair', 'table']
 	phases = ['12', '34', '56']
 
-	# # THIS CELL READS IN ALL OF THE PARTICIPANTS' DATA and fills into dictionary
-	# FEATDICT = {}
-	# METADICT = {}
-	# for si, sub in enumerate(subjects[:]):
-	#     print('{}/{}'.format(si+1, subs))
-	#     diffs = []
-	#     scores = []
-	#     subcount = 0
-	#     for phase in phases:
-	#         _feat = np.load(data_dir+'features/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
-	#         _feat = normalize(_feat)
-	#         _meta = pd.read_csv(data_dir+'features/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
-	#         FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
-	#         META = _meta if phase == "12" else pd.concat((META, _meta))
-	#     META = META.reset_index(drop=True)
+	# THIS CELL READS IN ALL OF THE PARTICIPANTS' DATA and fills into dictionary
+	FEATDICT = {}
+	METADICT = {}
+	for si, sub in enumerate(subjects[:]):
+	    print('{}/{}'.format(si+1, subs))
+	    diffs = []
+	    scores = []
+	    subcount = 0
+	    for phase in phases:
+	        _feat = np.load(data_dir+'features/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
+	        _feat = normalize(_feat)
+	        _meta = pd.read_csv(data_dir+'features/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
+	        FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
+	        META = _meta if phase == "12" else pd.concat((META, _meta))
+	    META = META.reset_index(drop=True)
 
-	#     assert FEAT.shape[0] == META.shape[0]
+	    assert FEAT.shape[0] == META.shape[0]
 	    
-	#     METADICT[sub] = META
-	#     FEATDICT[sub] = FEAT
-	#     clear_output(wait=True)
+	    METADICT[sub] = META
+	    FEATDICT[sub] = FEAT
+	    clear_output(wait=True)
 
 	# Which run to use as test data (leave as None to not have test data)
 	run = testRun # this used to be 6, which means use the 6th run as the testing data and other as training data.
@@ -145,7 +146,7 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	# Decide on the proportion of crescent data to use for classification
 	include = 1  
 	allpairs = itertools.combinations(objects,2)
-
+	
 	# Iterate over all the possible target pairs of objects
 	for pair in allpairs: # e.g pair is AB or AC or AD or BC or BD or CD
 	    # Find the control (remaining) objects for this pair
@@ -197,7 +198,7 @@ def offlineModel(sub='sub001',ses=1,testRun=None, FEAT=None, META=None):
 	            # Save it for later use
 	            savedModelFolder=f"subjects/{sub}/ses{ses}_recognition/"
 	            if not os.path.isdir(savedModelFolder+'clf'):
-	            	os.mkdir(workding_dir+'clf')
+	                os.mkdir(workding_dir+'clf')
 	            joblib.dump(clf, workding_dir+'clf/{}_{}.joblib'.format(sub, naming))
 	            
 	            # Monitor progress by printing accuracy (only useful if you're running a test set aka when run is not None)

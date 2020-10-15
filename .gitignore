@@ -4,7 +4,6 @@
 *.psydat
 *.npy
 *.pyc
-*.ipynb
 *.zip
 *.nii
 *.nii.gz
@@ -14,4 +13,4 @@
 *.gif
 *.xml
 *.dcm
-
+*checkpoint.ipynb

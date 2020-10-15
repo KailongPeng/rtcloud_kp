@@ -121,7 +121,7 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01',ses=1): # normally sub 
 	# the item(imcode) colume of the data represent each image in the following correspondence
 	imcodeDict={
 	'A': 'bed',
-	'B': 'Chair',
+	'B': 'chair',
 	'C': 'table',
 	'D': 'bench'}
 

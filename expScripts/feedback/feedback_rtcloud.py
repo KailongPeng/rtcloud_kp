@@ -105,6 +105,8 @@ for this_TR in np.arange(num_total_TRs):
 	data.append(newDicomFile_aligned)
 
 	## - load the saved model and apply it on the new coming dicom file.
+	model_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf'
+	model_dir+'pilot_sub001_bedbench_bedtable.joblib'
 	parameter = np.mean(data)
 	
 	## - send the output of the model to web.

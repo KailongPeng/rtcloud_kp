@@ -247,7 +247,7 @@ feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParamete
 while not os.path.exists(feedbackParameterFileName):
     time.sleep(0.05)
     print(f'waiting {feedbackParameterFileName}')
-
+parameters=pd.read_csv(feedbackParameterFileName)
 while np.isnan(parameters['value'].iloc[-1]):
     time.sleep(0.05)
     print(f'waiting parameters nan')

@@ -297,7 +297,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                                 'eachTime':eachTime},
                                ignore_index=True)
             oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
-            print('curr morph=',oldMorphParameter)
+            # print('curr morph=',oldMorphParameter)
             remainImageNumber.append(0)
             currImage=1
             # # discard the first image since it has been used.
@@ -319,7 +319,8 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                                     ignore_index=True)
                 currMorphParameter=re.findall(r"_\w+_",imagePaths[currImage].image)[1]
                 if currMorphParameter!=oldMorphParameter:
-                    print('curr morph=',currMorphParameter)
+                    pass
+                    # print('curr morph=',currMorphParameter)
                 oldMorphParameter=currMorphParameter
                 currImage=currImage+1        
             except:

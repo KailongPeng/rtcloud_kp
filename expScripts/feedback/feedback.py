@@ -245,11 +245,11 @@ feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParamete
 # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
 
 while not os.path.exists(feedbackParameterFileName):
-    time.sleep(0.005)
+    time.sleep(0.05)
     print(f'waiting {feedbackParameterFileName}')
 
 while np.isnan(parameters['value'].iloc[-1]):
-    time.sleep(0.005)
+    time.sleep(0.05)
     print(f'waiting parameters nan')
     parameters=pd.read_csv(feedbackParameterFileName)
 

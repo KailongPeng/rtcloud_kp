@@ -26,7 +26,7 @@ IDnum = sys.argv[1] #'pilot_sub001' # # this is the name of the subject
 sess = int(sys.argv[2]) #2 #  which session is this in? by design this can be 2 3 4 
 run = sys.argv[3] #1 # # which run is this in
 scanmode = 'Test'  # 'Scan' or 'Test' or None
-screenmode = False  # fullscr True or False
+screenmode = True  # fullscr True or False
 
 
 gui = True if screenmode == False else False

@@ -109,7 +109,7 @@ print('preloaded parameter range=',parameterRange)
 mywin = visual.Window(
     size=[1280, 800], fullscr=screenmode, screen=0,
     winType='pyglet', allowGUI=False, allowStencil=False,
-    monitor='testMonitor', color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
+    monitor=monitor_name, color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
     blendMode='avg', useFBO=True,
     units='height')
 

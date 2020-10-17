@@ -9,18 +9,20 @@ import pandas as pd
 import random
 from tqdm import tqdm
 import numpy as np
+
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
-
 def load_obj(name):
     with open(name + '.pkl', 'rb') as f:
         return pickle.load(f)
+
+# In total there are 48 trials.
 # quarter counterbalance, 3 repetition of each image in each quarter (36 trial)
 # prevent back to back repetition 
-# generate a new order for each subject.
-
+# generate a new order for each subject and each new recognition run.
+TR=2
 subj=1
 for subj in tqdm(range(1,51)):
     order=[]
@@ -118,11 +120,11 @@ for subj in tqdm(range(1,51)):
 
         p=np.random.uniform(0,1,1)
         if p<0.4:
-            SOA=3
+            SOA=2*TR
         elif p<0.8:
-            SOA=4.5
+            SOA=3*TR
         else:
-            SOA=6
+            SOA=4*TR
         orders_df=orders_df.append({'time':cumTime,
                                     'imnum':_order[currImg],
                                     'dur':1.0,

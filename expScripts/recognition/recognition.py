@@ -23,41 +23,55 @@ import pylink
 alpha = string.ascii_uppercase
 # startup parameters
 # maxTR = int((3*0.4+4.5*0.4+6*0.2)*12*4/1.5+60)  # mean 134.4 maximum 192
-IDnum = sys.argv[1]  # 'test' 'pilot'
+sub = sys.argv[1]  # 'test' 'pilot' "pilot_sub002"
 run = int(sys.argv[2])  # 1
 scanmode = 'Scan'  # 'Scan' or 'Test' or None
 screenmode = True  # fullscr True or False
 gui = True if screenmode == False else False
-monitor_name = "testMonitor"
+monitor_name = "testMonitor" #"scanner"
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
 
 # # create window on which all experimental stimuli will be drawn.
 # mywin = visual.Window([scnWidth - 10, scnHeight - 10], color=(0, 0, 0), screen=1, units="pix",
 #                       monitor=monitor_name, fullscr=screenmode, waitBlanking=False, allowGUI=gui)
+
 # Setup the Window
+# mywin = visual.Window(
+#     size=[1280, 800], fullscr=screenmode, screen=0,
+#     winType='pyglet', allowGUI=False, allowStencil=False,
+#     monitor=monitor_name, color=[0,0,0], colorSpace='rgb',
+#     blendMode='avg', useFBO=True,
+#     units='height')
 mywin = visual.Window(
-    size=[1280, 800], fullscr=screenmode, screen=0,
+    size=[scnWidth - 10, scnHeight - 10], fullscr=screenmode, screen=1,
     winType='pyglet', allowGUI=False, allowStencil=False,
-    monitor='scanner', color=[0,0,0], colorSpace='rgb',
+    monitor=monitor_name, color=[0,0,0], colorSpace='rgb',
     blendMode='avg', useFBO=True,
     units='height')
-# Open data file for eye tracking
-datadir = "./data/recognition/"
+
+if 'watts' in os.getcwd():
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+else:
+    main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
+
+# # Open data file for eye tracking
+# datadir = "./data/recognition/"
+saveDir="../"
 
 # This sets the order of stimulus presentation for all of the subjects' runs
 # If it is the first run, randomly select and save out six orders, otherwise read in that file
 if run == 1:
     choose = np.random.choice(np.arange(1, 49), 8, replace=False)
-    np.save('{}_orders.npy'.format(IDnum), choose)
+    np.save(f"{main_dir}subjects/{sub}/ses1_recognition/run{run}/{sub}_orders.npy", choose)
 else:
-    choose = np.load('{}_orders.npy'.format(IDnum))
+    choose = np.load(f"{main_dir}subjects/{sub}/ses1_recognition/run{run}/{sub}_orders.npy")
 
 # read the saved order 
 order = './orders/recognitionOrders_{}.csv'.format(choose[run - 1])
 trial_list = pd.read_csv(order)
 
-maxTR = int(trial_list['time'].iloc[-1] / 1.5 + 3)
+maxTR = int(trial_list['time'].iloc[-1] / 2 + 3)
 
 # Settings for MRI sequence
 MR_settings = {'TR': 2.000, 'volumes': maxTR, 'sync': 5, 'skip': 0, 'sound': True}
@@ -67,8 +81,8 @@ if not os.path.exists('./data'):
     os.mkdir('./data')
 
 # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
-newfile = f"./data/recognition/{IDnum}_{run}.csv"
-# log = "./Data/{}_{}.txt".format(str(IDnum), str(run))
+newfile = f"./data/recognition/{sub}_{run}.csv"
+# log = "./Data/{}_{}.txt".format(str(sub), str(run))
 # logfile = open(log, "w")
 assert not os.path.isfile(newfile), f"FILE {newfile} ALREADY EXISTS - check subject and run number"
 
@@ -119,7 +133,7 @@ for i in list(range(maxTR)):
 # verify distinct time courses, write out regressor files
 stimfunc = []
 for letter in alpha[:4]:
-    file = open("./data/regressor/{}_{}_{}.txt".format(IDnum, run, letter), 'w')
+    file = open("./data/regressor/{}_{}_{}.txt".format(sub, run, letter), 'w')
     thiscode = trial_list[trial_list['imcode'] == letter]
     blanks = np.zeros((maxTR, 1))
     TRons = np.array((thiscode['time'] / 1.5).astype(int))
@@ -146,7 +160,7 @@ button_on = ""
 button_off = ""
 
 # start global clock and fMRI pulses (start simulated or wait for real)
-print('Starting sub {} in run #{} - list #{}'.format(IDnum, run, choose[run - 1]))
+print('Starting sub {} in run #{} - list #{}'.format(sub, run, choose[run - 1]))
 globalClock = core.Clock()
 vol = launchScan(mywin, MR_settings, globalClock=globalClock, simResponses=None, mode=scanmode,
                  esc_key='escape', instr='select Scan or Test, press enter',
@@ -212,7 +226,7 @@ while globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
         trigger_counter += 1  # if there's a trigger, increment the trigger counter
         if len(onsets) != 0:
             # write the data!
-            data = data.append({'Sub': IDnum, 'Run': run, 'TR': trigger_counter - 1, 'Onset': time_list[0],
+            data = data.append({'Sub': sub, 'Run': run, 'TR': trigger_counter - 1, 'Onset': time_list[0],
                                 'Item': trials[0], 'Change': changes[0], 'Resp': resp,
                                 'RT': resp_time, 'image_on': image_on, 'button_on': button_on,
                                 'button_off': button_off},

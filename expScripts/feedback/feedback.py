@@ -40,7 +40,7 @@ step=3 #in simulation, how quickly the morph changes ramp up. Note this is only 
 
 # trial_list designing parameters
 TR=2 # the length of a TR is 2s
-parameterRange=np.arange(1,5) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
+parameterRange=np.arange(1,11) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
 TrialNumber=4 #how many trials are required
 
@@ -243,20 +243,32 @@ remainImageNumber=[]
 feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParameter/run_{run}.csv"
 
 # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
-
+_=1
 while not os.path.exists(feedbackParameterFileName):
-    time.sleep(0.05)
-    print(f'waiting {feedbackParameterFileName}')
+    keys = event.getKeys(["5","0"])
+    if '0' in keys: # whenever you want to quite, type 0
+        mywin.close()
+        core.quit()
+    time.sleep(0.01)
+    if _ % 100==0:
+        print(f'waiting {feedbackParameterFileName}')
+    _+=1
 parameters=pd.read_csv(feedbackParameterFileName)
 while np.isnan(parameters['value'].iloc[-1]):
-    time.sleep(0.05)
-    print(f'waiting parameters nan')
+    keys = event.getKeys(["5","0"])
+    if '0' in keys: # whenever you want to quite, type 0
+        mywin.close()
+        core.quit()
+    time.sleep(0.01)
+    if _ % 100==0:
+        print(f'waiting parameters nan')
+    _+=1
     parameters=pd.read_csv(feedbackParameterFileName)
 
 curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
-    keys = event.getKeys(["5"])  # check for triggers
+    keys = event.getKeys(["5","0"])  # check for triggers
     if '0' in keys: # whenever you want to quite, type 0
         mywin.close()
         core.quit()

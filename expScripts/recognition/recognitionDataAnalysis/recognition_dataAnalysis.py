@@ -35,9 +35,9 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run=1,ses=1): # normally s
 	# 	return recognitionData
 
 	tmp_folder = f"/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/{sub}/"  # tmp_folder='/tmp/kp578/'
-	# if os.path.isdir(tmp_folder):
-	# 	shutil.rmtree(tmp_folder)
-	# os.mkdir(tmp_folder)
+	if os.path.isdir(tmp_folder):
+		shutil.rmtree(tmp_folder)
+	os.mkdir(tmp_folder)
 
 	def printOrien(full_ref_BOLD):
 		# input might be .nii.gz file

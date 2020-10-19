@@ -101,17 +101,17 @@ def minimalClass(sub='pilot_sub001',ses=1):
 
     objects = ['bed', 'bench', 'chair', 'table']
     # phases = ['12', '34', '56'] #number of runs in day1recognition run
-    runs=['01'] #normally this would be np.arange(1,9)
+    runs=['1'] #normally this would be np.arange(1,9)
 
     for run in runs:
         # read in brain and behavior data
         brain_data_path=main_dir+f'subjects/{sub}/ses{ses}_recognition/run{run}/{sub}_{run}_preprocessed_brainData.npy'
         t=np.load(brain_data_path)
-        brain_data=t if run=='01' else np.concatenate((brain_data,t), axis=0)
+        brain_data=t if run=='1' else np.concatenate((brain_data,t), axis=0)
 
         behav_data_path=main_dir+f'subjects/{sub}/ses{ses}_recognition/run{run}/{sub}_{run}_preprocessed_behavData.csv'
         t=pd.read_csv(behav_data_path)
-        behav_data=t if run=='01' else pd.concat([behav_data,t])
+        behav_data=t if run=='1' else pd.concat([behav_data,t])
 
     FEAT=brain_data
     META=behav_data
@@ -128,7 +128,9 @@ def minimalClass(sub='pilot_sub001',ses=1):
     META['label']=label # merge the label column with the data dataframe
 
     # Which run to use as test data (leave as None to not have test data)
-    testRun = None
+    # testRun = None
+    testRun = 2
+    META['run_num'].iloc[:5]=2
 
     # Decide on the proportion of crescent data to use for classification
     include = 1

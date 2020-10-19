@@ -14,3 +14,4 @@
 *.xml
 *.dcm
 *checkpoint.ipynb
+*.joblib

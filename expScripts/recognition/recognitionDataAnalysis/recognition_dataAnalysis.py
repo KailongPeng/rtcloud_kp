@@ -20,7 +20,7 @@ import os
 import glob
 import shutil
 
-def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # normally sub should be sub001
+def recognition_dataAnalysis_brain(sub='pilot_sub001',run=1,ses=1): # normally sub should be sub001
 	# This script is in the environment of '/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/expScripts/recognition/' 
 	# and activate_rt
 	# The purpose of this script is to analyze the data from recognition run
@@ -34,10 +34,10 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 	# 	recognitionData=np.load(dataDir+'recognitionData.npy')
 	# 	return recognitionData
 
-	tmp_folder = "/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/" + sub # tmp_folder='/tmp/kp578/'
-	if os.path.isdir(tmp_folder):
-		shutil.rmtree(tmp_folder)
-	os.mkdir(tmp_folder)
+	tmp_folder = f"/gpfs/milgram/scratch60/turk-browne/kp578/sandbox/{sub}/"  # tmp_folder='/tmp/kp578/'
+	# if os.path.isdir(tmp_folder):
+	# 	shutil.rmtree(tmp_folder)
+	# os.mkdir(tmp_folder)
 
 	def printOrien(full_ref_BOLD):
 		# input might be .nii.gz file
@@ -62,14 +62,17 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 	# call(f"sbatch change2nifti.sh {subjectID}",shell=True) # convert dicom to nifti files
 
 	# copy the functional data to tmp folder 
-	if not os.path.isdir(tmp_folder+subjectID):
-		os.mkdir(tmp_folder+subjectID) # the intermediate data are saved in scratch folder, only original data and final results are saved in project folder
-		call(f"cp {functional} {tmp_folder}{subjectID}/",shell=True)
+	command=f"cp {functional} {tmp_folder}"
+	print(f"run {command}")
+	call(command, shell=True)
 
 	# split functional data to multiple volumes
-	call(f"fslsplit {tmp_folder}{subjectID}/{functional.split('/')[-1]}  {tmp_folder}{subjectID}/",shell=True) ## os.chdir(f"{tmp_folder}{subjectID}/")
-	functionalFiles=glob.glob(f'{tmp_folder}{subjectID}/*.nii.gz')
+	command=f"fslsplit {tmp_folder}{functional.split('/')[-1]}  {tmp_folder}"
+	print(f"run {command}")
+	call(command,shell=True) ## os.chdir(f"{tmp_folder}{subjectID}/")
+	functionalFiles=glob.glob(f'{tmp_folder}*.nii.gz')
 	functionalFiles.sort()
+	print('functionalFiles=',functionalFiles)
 
 	# select the middle volume as the template functional volume
 	templateFunctionalVolume=functionalFiles[int(len(functionalFiles)/2)]
@@ -85,7 +88,7 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 		command = f"3dvolreg \
 		-base {templateFunctionalVolume} \
 		-prefix  {TR_FunctionalTemplateSpace} \
-		-1Dfile {curr_TR[0:-7]}_motion.1D -1Dmatrix_save {curr_TR[0:-7]}_mat.1D {curr_TR}"
+		{curr_TR}" # -1Dfile {curr_TR[0:-7]}_motion.1D -1Dmatrix_save {curr_TR[0:-7]}_mat.1D \
 		print(command)
 		A=time.time()
 		call(command,shell=True)
@@ -106,13 +109,12 @@ def recognition_dataAnalysis_brain(sub='pilot_sub001',run='01',ses='1'): # norma
 	return recognitionData
 
 
-# parameters of this code:
-def recognition_dataAnalysis(sub='pilot_sub001',run='01',ses=1): # normally sub should be sub001
-
+def recognition_dataAnalysis(sub='pilot_sub001',run=1,ses=1): # normally sub should be sub001
 	# loading packages and general paths
 	import pandas as pd
 	import numpy as np
 	import os
+
 	if 'milgram' in os.getcwd():
 		main_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/'
 	else:
@@ -183,7 +185,7 @@ def recognition_dataAnalysis(sub='pilot_sub001',run='01',ses=1): # normally sub 
 sub='pilot_sub001'
 run='01'
 ses=1
-for run in ['01']:
+for run in [1]:
 	brain_data, behav_data, brain_data_path, behav_data_path = recognition_dataAnalysis(sub=sub,run=run,ses=ses)
 print('behav_data=',behav_data)
 print('brain_data.shape=',brain_data.shape)

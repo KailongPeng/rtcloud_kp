@@ -16,32 +16,47 @@ import time
 import re
 alpha = string.ascii_uppercase
 
-
-main_dir="../../"
-
+if 'watts' in os.getcwd():
+    main_dir = "/home/watts/Desktop/ntblab/kailong/rtcloud_kp/"
+else:
+    main_dir="/Volumes/GoogleDrive/My Drive/Turk_Browne_Lab/rtcloud_kp/"
 
 # startup parameters
-IDnum = 'pilot_sub001' #sys.argv[1] # this is the name of the subject
-sess = 2 # int(sys.argv[2]) which session is this in? by design this can be 2 3 4 
-run = 1 #int(sys.argv[3]) # which run is this in
+sub = sys.argv[1] #'pilot_sub001' # # this is the name of the subject
+sess = int(sys.argv[2]) #2 #  which session is this in? by design this can be 2 3 4 
+run = sys.argv[3] #1 # # which run is this in
 scanmode = 'Test'  # 'Scan' or 'Test' or None
-screenmode = False  # fullscr True or False
+screenmode = True  # fullscr True or False
 
 
 gui = True if screenmode == False else False
-monitor_name = "testMonitor" #might be scanner?
+monitor_name = "scanner" # scanner testMonitor
 scnWidth, scnHeight = monitors.Monitor(monitor_name).getSizePix()
 frameTolerance = 0.001  # how close to onset before 'same' frame
 TRduration=2.0
+
+# mywin = visual.Window(
+    # size=[1280, 800], fullscr=screenmode, screen=0,
+    # winType='pyglet', allowGUI=False, allowStencil=False,
+    # monitor=monitor_name, color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
+    # blendMode='avg', useFBO=True,
+    # units='height')
+
+mywin = visual.Window(
+    size=[scnWidth - 100, scnHeight - 100], fullscr=screenmode, screen=1,
+    winType='pyglet', allowGUI=False, allowStencil=False,
+    monitor=monitor_name, color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
+    blendMode='avg', useFBO=True,
+    units='height')
 
 # similation specific
 step=3 #in simulation, how quickly the morph changes ramp up. Note this is only for simulation, has nothing to do with real experiment
 
 # trial_list designing parameters
 TR=2 # the length of a TR is 2s
-parameterRange=np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
+parameterRange=np.arange(1,11) #for saving time for now. np.arange(1,20) #define the range for possible parameters for preloading images. Preloading images is to make the morphing smooth during feedback
 tune=4 # this parameter controls how much to morph (how strong the morphing is) (used in preloading function), tune can range from (1,6.15] when paremeterrange is np.arange(1,20)
-TrialNumber=4 #how many trials are required
+TrialNumber=10 #how many trials are required #test trial ,each trial is 14s, 10 trials are 140s.
 
 ## - design the trial list: the sequence of the different types of components: 
 ## - e.g: ITI + waiting for fMRI signal + feedback (receive model output from feedbackReceiver.py)
@@ -104,13 +119,6 @@ print('total trial number=',TrialNumber)
 print('preloaded parameter range=',parameterRange)
 # print('used parameters=',parameters)
 
-
-mywin = visual.Window(
-    size=[1280, 800], fullscr=screenmode, screen=0,
-    winType='pyglet', allowGUI=False, allowStencil=False,
-    monitor='testMonitor', color=[0,0,0], colorSpace='rgb', #color=[0,0,0]
-    blendMode='avg', useFBO=True,
-    units='height')
 
 
 def sample(L,num=10):
@@ -178,7 +186,7 @@ imageLists=preloadimages(parameterRange=parameterRange,tune=tune)
 
 # Open data file for eye tracking
 # datadir = "./data/feedback/"
-datadir = main_dir + f"subjects/{IDnum}/ses{sess}_feedback/"
+datadir = main_dir + f"subjects/{sub}/ses{sess}_feedback/"
 
 maxTR=int(trial_list['TR'].iloc[-1])+6
 # Settings for MRI sequence
@@ -191,7 +199,7 @@ if not os.path.exists('./data/feedback/'):
     os.mkdir('./data/feedback/')
 
 # check if data for this subject and run already exist, and raise an error if they do (prevent overwriting)
-newfile = datadir+"{}_{}.csv".format(str(IDnum), str(run))
+newfile = datadir+"{}_{}.csv".format(str(sub), str(run))
 if os.path.exists(newfile):
     raise Exception(f'{newfile} exists')
 # create empty dataframe to accumulate data
@@ -202,7 +210,7 @@ fix = visual.Circle(mywin, units='deg', radius=0.05, pos=(0, 0), fillColor='whit
                     lineColor='black', lineWidth=0.5, opacity=0.5, edges=128)
 
 # start global clock and fMRI pulses (start simulated or wait for real)
-print('Starting sub {} in run #{}'.format(IDnum, run))
+print('Starting sub {} in run #{}'.format(sub, run))
 
 vol = launchScan(mywin, MR_settings, simResponses=None, mode=scanmode,
                  esc_key='escape', instr='select Scan or Test, press enter',
@@ -239,12 +247,35 @@ newWobble=list(trial_list['newWobble'])
 ParameterUpdateDuration=np.diff(np.where(trial_list['newWobble']==1))[0][0]*TRduration
 curr_parameter=0
 remainImageNumber=[]
-feedbackParameterFileName=main_dir+f"subjects/{IDnum}/ses{sess}_feedbackParameter/run_{run}.csv"
+feedbackParameterFileName=main_dir+f"subjects/{sub}/ses{sess}_feedbackParameter/run_{run}.csv"
 
 # While the running clock is less than the total time, monitor for 5s, which is what the scanner sends for each TR
+_=1
+while not os.path.exists(feedbackParameterFileName):
+    keys = event.getKeys(["5","0"])
+    if '0' in keys: # whenever you want to quite, type 0
+        mywin.close()
+        core.quit()
+    time.sleep(0.01)
+    if _ % 100==0:
+        print(f'waiting {feedbackParameterFileName}')
+    _+=1
+parameters=pd.read_csv(feedbackParameterFileName)
+while np.isnan(parameters['value'].iloc[-1]):
+    keys = event.getKeys(["5","0"])
+    if '0' in keys: # whenever you want to quite, type 0
+        mywin.close()
+        core.quit()
+    time.sleep(0.01)
+    if _ % 100==0:
+        print(f'waiting parameters nan')
+    _+=1
+    parameters=pd.read_csv(feedbackParameterFileName)
+
+curr_parameter=len(parameters['value'])-1
 while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings['TR']) + 3:
     trialTime = trialClock.getTime()
-    keys = event.getKeys(["5"])  # check for triggers
+    keys = event.getKeys(["5","0"])  # check for triggers
     if '0' in keys: # whenever you want to quite, type 0
         mywin.close()
         core.quit()
@@ -255,8 +286,14 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
         print(states[0])
         if states[0] == 'feedback' and newWobble[0]==1:
             # fetch parameter from preprocessing process on Milgram            
+            print('feedbackParameterFileName=',feedbackParameterFileName)
             parameters=pd.read_csv(feedbackParameterFileName)
+            # if curr_parameter>(len(parameters['value'])-1):
+                # curr_parameter=curr_parameter-1
+            curr_parameter=(len(parameters['value'])-1)
             parameter=parameters['value'].iloc[curr_parameter]
+            print('curr_parameter=',curr_parameter)
+            print('parameter=',parameter)
 
             curr_parameter=curr_parameter+1
             # start new clock for current updating duration (the duration in which only a single parameter is used, which can be 1 TR or a few TRs, the begining of the updateDuration is indicated by the table['newWobble'])
@@ -273,7 +310,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
             # currImage*eachTime is used in the calculation of the start time of next image in the list.
             
             # save when the image is presented and which image is presented.
-            data = data.append({'Sub': IDnum, 
+            data = data.append({'Sub': sub, 
                                 'Run': run, 
                                 'TR': TR[0],
                                 'time': trialTime, 
@@ -281,7 +318,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                                 'eachTime':eachTime},
                                ignore_index=True)
             oldMorphParameter=re.findall(r"_\w+_",imagePaths[0].image)[1]
-            print('curr morph=',oldMorphParameter)
+            # print('curr morph=',oldMorphParameter)
             remainImageNumber.append(0)
             currImage=1
             # # discard the first image since it has been used.
@@ -294,7 +331,7 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                 remainImageNumber.append(currImage)
 
                 # write the data!
-                data = data.append({'Sub': IDnum, 
+                data = data.append({'Sub': sub, 
                                     'Run': run, 
                                     'TR': TR[0], 
                                     'time': trialTime, 
@@ -303,7 +340,8 @@ while len(TR)>1: #globalClock.getTime() <= (MR_settings['volumes'] * MR_settings
                                     ignore_index=True)
                 currMorphParameter=re.findall(r"_\w+_",imagePaths[currImage].image)[1]
                 if currMorphParameter!=oldMorphParameter:
-                    print('curr morph=',currMorphParameter)
+                    pass
+                    # print('curr morph=',currMorphParameter)
                 oldMorphParameter=currMorphParameter
                 currImage=currImage+1        
             except:

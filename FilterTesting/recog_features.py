@@ -89,21 +89,13 @@ def filtering(timeseries=None,filterType='highPassRealTime'):
 
 
 def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
-    
-
     import os
     import sys
     import numpy as np
     import pandas as pd
     import nibabel as nib
 
-
-    
-
     os.chdir('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten/')
-
-    # subject = '0110171' #sys.argv[1] # This is the subject name
-
     subject = subject.split('_')[0]
     proj_dir = '/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/'
     dat_type = 'recog'
@@ -134,7 +126,7 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
     roi_list_masks = ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo'] #['V1', 'V2','LOC_FS','IT_FS','fusiform_FS','parahippo_FS','PRC_FS','ento_FS','hipp_FS','V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
     roi_list_names = ['V1', 'fusiform', 'IT', 'LOC', 'occitemp', 'parahippo'] #['V1','V2','LOC','IT','fusiform','parahippo','PRC','ento','hipp', 'V1Draw', 'V2Draw', 'LOCDraw', 'ParietalDraw']
 
-    for phase in ['12', '34', '56']:
+    for curr_phase,phase in enumerate(['12', '34', '56']):
         # initialize data columns
         subj = [subject] * 160
         label = []
@@ -164,9 +156,15 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
             labels = [label for label in Onsets if label != 0]
             FEATURES = np.array(features) if rn == 0 else np.vstack((FEATURES, np.array(features)))
             LABELS = labels if rn == 0 else LABELS + labels
+
+        if curr_phase==0:
+            FEATURES_oldShape=FEATURES.shape
+        else:
+            assert np.allclose(FEATURES.shape,FEATURES_oldShape),"FEATURES shape not match"
+
         np.save('{}/{}_{}_featurematrix.npy'.format(out_dir, subject, phase), FEATURES)
         
-        for roi, roiname in zip(roi_list_masks[:9], roi_list_names[:9]):
+        for roi, roiname in zip(roi_list_masks, roi_list_names):
             # mask = nib.load('{}/{}.nii.gz'.format(roi_dir.format(subject), roi))
             mask = nib.load('{}/{}_func_combined_{}_binarized.nii.gz'.format(roi_dir.format(subject), roi,'12')) #here the phase is fixed to '12' because I found that different phases mask are different, e.g. fslview_deprecated /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/analysis/firstlevel/rois/V1_func_combined_12_binarized.nii.gz /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/0110171_neurosketch/analysis/firstlevel/rois/V1_func_combined_34_binarized.nii.gz are not the same!
             maskDat = mask.get_data()
@@ -179,33 +177,23 @@ def recog_features(subject='0110171',filterType = 'highPassBetweenRuns'):
             x.columns = ['subj','label','run_num', 'TR_num']
             x.to_csv('{}/metadata_{}_{}_{}.csv'.format(out_dir, subject, roiname, phase))
 
-
-
 from glob import glob
 import os
 from subprocess import call
 import sys
 
-working_dir='/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten'
+#installing rtAtten is very simple, just `conda env create -f environment.yml ; source activate rtAtten ; python setup.py install`
+working_dir='/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten' 
 os.chdir(working_dir)
 print('pwd=',os.getcwd())
 print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
 
-subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
-subjects=glob(subject_dir+'*_neurosketch')
-subjects=[sub.split('/')[-1] for sub in subjects]
-
-
 sub=sys.argv[1]
 filterType=sys.argv[2]
-# for s,sub in enumerate(subjects):
 print('sub=',sub)
 print('filterType=',filterType)
 
-recog_features(
-    subject=sub,
-    filterType = filterType
-    )
+recog_features(subject=sub, filterType = filterType)
 
 
 # ## - to run all the subjects
@@ -218,7 +206,8 @@ recog_features(
 # #SBATCH --time=3:00:00
 # #SBATCH --output=logs/rt_sketch-%j.out
 # #SBATCH --mem=50g
-# module load miniconda ; 
+# #SBATCH --mail-type=FAIL
+# module load miniconda
 # source activate rtAtten
 # sub=$1
 # filters=$2
@@ -230,14 +219,13 @@ recog_features(
 # import os
 # from subprocess import call
 # subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
-# # os.chdir(subject_dir)
 # subjects=glob(subject_dir+'*_neurosketch')
-# subjects=[sub.split('/')[-1] for sub in subjects]
+# subjects=[sub.split('/')[-1] for sub in subjects if sub.split('/')[-1][0]!='_']
 # filters=[
 # #'UnscentedKalmanFilter_filter', #takes too long
 # #'UnscentedKalmanFilter_smooth', #takes too long
-# 'KalmanFilter_filter',
-# 'KalmanFilter_smooth',
+# # 'KalmanFilter_filter', #takes too long if done seperately for each voxel, takes too much memory if processing everything at the same time.
+# # 'KalmanFilter_smooth',
 # 'noFilter',
 # 'highPassRealTime',
 # 'highPassBetweenRuns' 

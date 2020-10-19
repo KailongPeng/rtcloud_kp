@@ -13,7 +13,6 @@ import sys
 import os
 import pylink
 
-
 # imcode:
 # A: bed
 # B: Chair

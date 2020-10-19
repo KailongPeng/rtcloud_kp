@@ -1,4 +1,95 @@
-def minimalClass(filterType = 'noFilter'):
+def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None):
+    # data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
+    # files = os.listdir(data_dir)
+    # feats = [i for i in files if 'metadata' not in i]
+    # subjects = np.unique([i.split('_')[0] for i in feats])
+
+    # # THIS CELL READS IN ALL OF THE PARTICIPANTS' DATA and fills into dictionary
+    # FEATDICT = {}
+    # METADICT = {}
+    # subjects_new=[]
+    # for si, sub in enumerate(subjects[:]):
+    #     try:
+    #         print('{}/{}'.format(si+1, len(subjects)))
+    #         diffs = []
+    #         scores = []
+    #         subcount = 0
+    #         for phase in phases:
+    #             _feat = np.load(data_dir+'/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
+    #             _feat = normalize(_feat)
+    #             _meta = pd.read_csv(data_dir+'/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
+    #             if phase!='12':
+    #                 assert _feat.shape[1]==FEAT.shape[1], 'feat shape not matched'
+    #             FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
+    #             META = _meta if phase == "12" else pd.concat((META, _meta))
+    #         META = META.reset_index(drop=True)
+
+    #         assert FEAT.shape[0] == META.shape[0]
+
+    #         METADICT[sub] = META
+    #         FEATDICT[sub] = FEAT
+    #         clear_output(wait=True)
+    #         subjects_new.append(sub)
+    #     except:
+    #         pass
+
+    # each testRun, each subject, each target axis, each target obj would generate one.
+    META = METADICT[sub]
+    FEAT = FEATDICT[sub]
+    # Using the trained model, get the evidence
+    testRun=6
+    objects=['bed', 'bench', 'chair', 'table']
+    allpairs = itertools.combinations(objects,2)
+    for pair in allpairs: #pair=('bed', 'bench')
+        # Find the control (remaining) objects for this pair
+        altpair = other(pair) #altpair=('chair', 'table')
+        for obj in pair: #obj='bed'
+            # in the current target axis pair=('bed', 'bench') altpair=('chair', 'table'), display image obj='bed'
+            # find the evidence for bed from the (bed chair) and (bed table) classifier
+
+            # get the test data and seperate the test data into category obj and category other
+            objIX = META.index[(META['label'].isin([obj])) & (META['run_num'] == int(testRun))]
+            otherObjIX = META.index[(META['label'].isin(other(obj))) & (META['run_num'] == int(testRun))]
+
+            # pull training and test data
+            trainX = FEAT[trainIX]
+            testX = FEAT[testIX]
+            trainY = META.iloc[trainIX].label
+            testY = META.iloc[testIX].label
+
+            obj_X=FEAT[objIX]
+            obj_Y=META.iloc[objIX].label
+            otherObj_X=FEAT[otherObjIX]
+            otherObj_Y=META.iloc[otherObjIX].label
+
+            model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{filterType}/'
+            clf1 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[0]}.joblib')
+            clf2 = joblib.load(f'{model_folder}{sub}_{pair[0]}{pair[1]}_{obj}{altpair[1]}.joblib')
+
+            s1 = clf1.score(obj_X, obj_Y)
+            s2 = clf2.score(obj_X, obj_Y)
+            obj_evidence = s1 + s2
+            print('obj_evidence=',obj_evidence)
+
+            s1 = clf1.score(otherObj_X, otherObj_Y)
+            s2 = clf2.score(otherObj_X, otherObj_Y)
+            otherObj_evidence = s1 + s2
+            print('otherObj_evidence=',otherObj_evidence)
+
+            testEvidence = testEvidence.append({
+                'sub':sub,
+                'testRun':testRun,
+                'targetAxis':pair,
+                'obj':obj,
+                'obj_evidence':obj_evidence,
+                'otherObj_evidence':otherObj_evidence,
+                'filterType':filterType},
+                ignore_index=True)
+
+    return testEvidence
+
+
+def minimalClass(filterType = 'noFilter',testRun = 6):
     import os
     import numpy as np
     import pandas as pd
@@ -29,13 +120,13 @@ def minimalClass(filterType = 'noFilter'):
     def red_vox(n_vox, prop=0.1):
         return int(np.ceil(n_vox * prop))
 
-    def get_inds(X, Y, pair, run=None):
+    def get_inds(X, Y, pair, testRun=None):
         
         inds = {}
         
         # return relative indices
-        if run:
-            trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(run))]
+        if testRun:
+            trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(testRun))]
         else:
             trainIX = Y.index[(Y['label'].isin(pair))]
 
@@ -49,9 +140,9 @@ def minimalClass(filterType = 'noFilter'):
         B = clf.coef_[0]  # pull betas
 
         # retrieve only the first object, then only the second object
-        if run:
-            obj1IX = Y.index[(Y['label'] == pair[0]) & (Y['run_num'] != int(run))]
-            obj2IX = Y.index[(Y['label'] == pair[1]) & (Y['run_num'] != int(run))]
+        if testRun:
+            obj1IX = Y.index[(Y['label'] == pair[0]) & (Y['run_num'] != int(testRun))]
+            obj2IX = Y.index[(Y['label'] == pair[1]) & (Y['run_num'] != int(testRun))]
         else:
             obj1IX = Y.index[(Y['label'] == pair[0])]
             obj2IX = Y.index[(Y['label'] == pair[1])]
@@ -82,7 +173,8 @@ def minimalClass(filterType = 'noFilter'):
     subjects = np.unique([i.split('_')[0] for i in feats])
 
     # If you want to reduce the number of subjects used for testing purposes
-    subs=4
+    subs=len(subjects)
+    # subs=1
     subjects = subjects[:subs]
     print(subjects)
 
@@ -96,8 +188,10 @@ def minimalClass(filterType = 'noFilter'):
     # THIS CELL READS IN ALL OF THE PARTICIPANTS' DATA and fills into dictionary
     FEATDICT = {}
     METADICT = {}
+    subjects_new=[]
     for si, sub in enumerate(subjects[:]):
-        print('{}/{}'.format(si+1, subs))
+        # try:
+        print('{}/{}'.format(si+1, len(subjects)))
         diffs = []
         scores = []
         subcount = 0
@@ -105,23 +199,28 @@ def minimalClass(filterType = 'noFilter'):
             _feat = np.load(data_dir+'/{}_{}_{}_featurematrix.npy'.format(sub, roi, phase))
             _feat = normalize(_feat)
             _meta = pd.read_csv(data_dir+'/metadata_{}_{}_{}.csv'.format(sub, roi, phase))
+            if phase!='12':
+                assert _feat.shape[1]==FEAT.shape[1], 'feat shape not matched'
             FEAT = _feat if phase == "12" else np.vstack((FEAT, _feat))
             META = _meta if phase == "12" else pd.concat((META, _meta))
         META = META.reset_index(drop=True)
 
         assert FEAT.shape[0] == META.shape[0]
-        
+
         METADICT[sub] = META
         FEATDICT[sub] = FEAT
         clear_output(wait=True)
-
+        subjects_new.append(sub)
+        # except:
+        #     pass
     # Which run to use as test data (leave as None to not have test data)
-    run = 6
+    subjects=subjects_new
 
     # Decide on the proportion of crescent data to use for classification
     include = 1
     accuracyContainer=[]
-    for sub in subjects:
+    for si,sub in enumerate(subjects):
+        print('{}/{}'.format(si+1, len(subjects)))
         print(sub)
         META = METADICT[sub]
         FEAT = FEATDICT[sub]
@@ -134,7 +233,7 @@ def minimalClass(filterType = 'noFilter'):
             altpair = other(pair)
             
             # pull sorted indices for each of the critical objects, in order of importance (low to high)
-            inds = get_inds(FEAT, META, pair, run=run)
+            inds = get_inds(FEAT, META, pair, testRun=testRun)
             
             # Find the number of voxels that will be left given your inclusion parameter above
             nvox = red_vox(FEAT.shape[1], include)
@@ -152,9 +251,9 @@ def minimalClass(filterType = 'noFilter'):
                     obj_inds = inds[obj]
                     
                     # If you're using testdata, this function will split it up. Otherwise it leaves out run as a parameter
-                    if run:
-                        trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(run))]
-                        testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(run))]
+                    if testRun:
+                        trainIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] != int(testRun))]
+                        testIX = META.index[(META['label'].isin([obj, altobj])) & (META['run_num'] == int(testRun))]
                     else:
                         trainIX = META.index[(META['label'].isin([obj, altobj]))]
                         testIX = META.index[(META['label'].isin([obj, altobj]))]
@@ -174,28 +273,27 @@ def minimalClass(filterType = 'noFilter'):
                     clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
                                              multi_class='multinomial').fit(trainX, trainY)
                     
-                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/'
+                    model_folder = f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/{filterType}/'
+                    if not os.path.isdir(model_folder):
+                        os.mkdir(model_folder)
                     # Save it for later use
-                    joblib.dump(clf, model_folder +'/{}_{}.joblib'.format(sub, naming))
+                    joblib.dump(clf, model_folder +'{}_{}.joblib'.format(sub, naming))
                     
                     # Monitor progress by printing accuracy (only useful if you're running a test set)
                     acc = clf.score(testX, testY)
-                    print(naming, acc)
+                    if (si+1)%10==0:
+                        print(naming, acc)
+                    accuracyContainer.append(acc)
+
+    testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','obj_evidence','otherObj_evidence','filterType'])
+    for sub in subjects:
+        testEvidence=getEvidence(sub,testEvidence,METADICT=METADICT,FEATDICT=FEATDICT)
     print(accuracyContainer)
-    return accuracyContainer
+    return accuracyContainer,testEvidence
 
-highPassRealTime=minimalClass(filterType = 'highPassRealTime')
-highPassBetweenRuns=minimalClass(filterType = 'highPassBetweenRuns')
-UnscentedKalmanFilter_filter=minimalClass(filterType = 'UnscentedKalmanFilter_filter')
-UnscentedKalmanFilter_smooth=minimalClass(filterType = 'UnscentedKalmanFilter_smooth')
-noFilter=minimalClass(filterType = 'noFilter')
-
-'''
-highPassRealTime 
-highPassBetweenRuns 
-UnscentedKalmanFilter_filter # documentation: https://pykalman.github.io/
-UnscentedKalmanFilter_smooth
-KalmanFilter_filter
-KalmanFilter_smooth
-noFilter
-'''
+# This is to get the model trained
+noFilter,testEvidence=minimalClass(filterType = 'noFilter')
+# UnscentedKalmanFilter_filter=minimalClass(filterType = 'UnscentedKalmanFilter_filter')
+# UnscentedKalmanFilter_smooth=minimalClass(filterType = 'UnscentedKalmanFilter_smooth')
+# highPassRealTime=minimalClass(filterType = 'highPassRealTime')
+# highPassBetweenRuns=minimalClass(filterType = 'highPassBetweenRuns')

@@ -47,7 +47,7 @@ def recognition_dataAnalysis_brain(sub='0110171_neurosketch',run=1, templateFunc
 	functional=f'{dataDir}{sub}_recognition_run_{run}.nii.gz'
 
 	# copy the functional data to tmp folder 
-	call(f"cp {functional} {tmp_folder}/",shell=True)
+	call(f"cp {functional} {tmp_folder}/", shell=True)
 
 	# split functional data to multiple volumes
 	call(f"fslsplit {tmp_folder}/{functional.split('/')[-1]}  {tmp_folder}/",shell=True)
@@ -86,21 +86,18 @@ def recognition_dataAnalysis_brain(sub='0110171_neurosketch',run=1, templateFunc
 		print(f"{B-A}s passed")
 		outputFileNames.append(TR_FunctionalTemplateSpace)
 
+	# merge the aligned data to the PreprocessedData, finish preprocessing
 	files=''
 	for f in outputFileNames:
 	    files=files+' '+f
-	# merge the aligned data to the PreprocessedData, finish preprocessing
 	command=f"fslmerge -t {PreprocessedData} {files}"
 	print('running',command)
 	call(command, shell=True)
 	return templateFunctionalVolume
 
-sub=sys.argv[1]
-# sub='0110171_neurosketch'
+sub=sys.argv[1] # sub='0110171_neurosketch'
 for run in range(1,7):
 	recognition_dataAnalysis_brain(sub=sub,run=run)
-
-
 
 # generate transformation matrix from functional template space to anatomical space
 templateFunctionalVolume=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/{sub}/data/nifti/realtime_preprocessed/templateFunctionalVolume.nii.gz'
@@ -112,8 +109,6 @@ command = f'flirt -in {templateFunctionalVolume_bet} -ref {AnatomicalFile} \
 -out {templateFunctionalVolume_inAnatSpace} -omat /gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/{sub}/data/nifti/realtime_preprocessed/func2anat.mat'
 print('Running ' + command)
 call(command, shell=True)
-
-
 
 
 # ## - to run all the subjects

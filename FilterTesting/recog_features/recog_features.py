@@ -25,7 +25,9 @@ def filtering(timeseries=None,filterType='highPassRealTime'):
         KalmanFilter_smooth
         noFilter
     '''
-    
+    import numpy as np    
+    import sys
+    sys.path.append('/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten')
     timeseries=timeseries.astype(np.float)
     oldShape=timeseries.shape
     timeseries=timeseries.reshape(timeseries.shape[0],-1)
@@ -194,7 +196,7 @@ from subprocess import call
 import sys
 
 #installing rtAtten is very simple, just `conda env create -f environment.yml ; source activate rtAtten ; python setup.py install`
-working_dir='/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten' 
+working_dir='/gpfs/milgram/scratch60/turk-browne/kp578/rtAttenPenn_cloud/rtAtten/' 
 os.chdir(working_dir)
 print('pwd=',os.getcwd())
 print('CONDA_DEFAULT_ENV=',os.environ['CONDA_DEFAULT_ENV'])
@@ -204,7 +206,12 @@ filterType=sys.argv[2]
 print('sub=',sub)
 print('filterType=',filterType)
 
-recog_features(subject=sub, filterType = filterType)
+complete=f"{working_dir}complete/{sub}{filterType}.complete"
+if not os.path.isdir(f"{working_dir}complete/"):
+    os.mkdir(f"{working_dir}complete/")
+if not os.path.exists(complete):
+    recog_features(subject=sub, filterType = filterType)
+    call(f"touch {complete}",shell=True)
 
 
 # ## - to run all the subjects
@@ -219,10 +226,10 @@ recog_features(subject=sub, filterType = filterType)
 # #SBATCH --mem=50g
 # #SBATCH --mail-type=FAIL
 # module load miniconda
-# source activate rtAtten
+# source activate /gpfs/milgram/project/turk-browne/kp578/conda_envs/rtAtten
 # sub=$1
 # filters=$2
-# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtcloud_kp/expScripts/recognition/recog_features/recog_features.py $sub $filters
+# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/recog_features/recog_features.py $sub $filters
 
 
 # # recog_features_parent.py

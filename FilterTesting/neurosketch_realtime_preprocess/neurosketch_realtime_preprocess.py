@@ -17,7 +17,8 @@ import glob
 import shutil
 
 def recognition_dataAnalysis_brain(sub='0110171_neurosketch',run=1, templateFunctionalVolume=None): # normally sub should be sub001
-	
+	print('sub=',sub)
+	print('run=',run)
 	homeDir="/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/" 
 	dataDir=f"{homeDir}subjects/{sub}/data/nifti/"
 
@@ -93,6 +94,12 @@ def recognition_dataAnalysis_brain(sub='0110171_neurosketch',run=1, templateFunc
 	command=f"fslmerge -t {PreprocessedData} {files}"
 	print('running',command)
 	call(command, shell=True)
+
+	if os.path.exists(PreprocessedData):
+		print(f"{PreprocessedData} exists")
+	else:
+		print(f"{PreprocessedData} does not exist!")
+		error
 	return templateFunctionalVolume
 
 sub=sys.argv[1] # sub='0110171_neurosketch'
@@ -122,19 +129,24 @@ call(command, shell=True)
 # #SBATCH --time=3:00:00
 # #SBATCH --output=logs/rt_sketch-%j.out
 # #SBATCH --mem=50g
+# #SBATCH --mail-type=FAIL
 # module load miniconda
-# module load AFNI/2018.08.28 ; module load FSL ; source /gpfs/milgram/apps/hpc.rhel7/software/FSL/6.0.0-centos7_64/etc/fslconf/fsl.sh ; module load miniconda ; source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
+# module load AFNI/2018.08.28
+# module load FSL
+# source /gpfs/milgram/apps/hpc.rhel7/software/FSL/6.0.0-centos7_64/etc/fslconf/fsl.sh 
+# module load miniconda 
+# source activate /gpfs/milgram/project/turk-browne/users/kp578/CONDA/rtcloud
 # sub=$1
-# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtcloud_kp/expScripts/recognition/neurosketch_realtime_preprocess/neurosketch_realtime_preprocess.py $sub
+# /usr/bin/time python -u /gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/neurosketch_realtime_preprocess.py $sub
+
 
 # # neurosketch_realtime_preprocess_parent.py
 # from glob import glob
 # import os
 # from subprocess import call
 # subject_dir='/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/subjects/'
-# # os.chdir(subject_dir)
 # subjects=glob(subject_dir+'*_neurosketch')
-# subjects=[sub.split('/')[-1] for sub in subjects]
+# subjects=[sub.split('/')[-1] for sub in subjects if sub.split('/')[-1][0]!='_']
 # for sub in subjects:
 # 	command=f'sbatch neurosketch_realtime_preprocess_child.sh {sub}'
 # 	print(command)

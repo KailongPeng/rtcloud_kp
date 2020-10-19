@@ -1,4 +1,77 @@
-def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None):
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn
+import joblib
+import nibabel as nib
+import itertools
+from sklearn.linear_model import LogisticRegression
+from IPython.display import clear_output
+
+
+def normalize(X):
+    X = X - X.mean(0)
+    return X
+
+def jitter(size,const=0):
+    jit = np.random.normal(0+const, 0.05, size)
+    X = np.zeros((size))
+    X = X + jit
+    return X
+
+def other(target):
+    other_objs = [i for i in ['bed', 'bench', 'chair', 'table'] if i not in target]
+    return other_objs
+
+def red_vox(n_vox, prop=0.1):
+    return int(np.ceil(n_vox * prop))
+
+def get_inds(X, Y, pair, testRun=None):
+    
+    inds = {}
+    
+    # return relative indices
+    if testRun:
+        trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(testRun))]
+    else:
+        trainIX = Y.index[(Y['label'].isin(pair))]
+
+    # pull training and test data
+    trainX = X[trainIX]
+    trainY = Y.iloc[trainIX].label
+    
+    # Main classifier on 5 runs, testing on 6th
+    clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
+                             multi_class='multinomial').fit(trainX, trainY)
+    B = clf.coef_[0]  # pull betas
+
+    # retrieve only the first object, then only the second object
+    if testRun:
+        obj1IX = Y.index[(Y['label'] == pair[0]) & (Y['run_num'] != int(testRun))]
+        obj2IX = Y.index[(Y['label'] == pair[1]) & (Y['run_num'] != int(testRun))]
+    else:
+        obj1IX = Y.index[(Y['label'] == pair[0])]
+        obj2IX = Y.index[(Y['label'] == pair[1])]
+    # Get the average of the first object, then the second object
+    obj1X = np.mean(X[obj1IX], 0)
+    obj2X = np.mean(X[obj2IX], 0)
+
+    # Build the importance map
+    mult1X = obj1X * B
+    mult2X = obj2X * B
+
+    # Sort these so that they are from least to most important for a given category.
+    sortmult1X = mult1X.argsort()[::-1]
+    sortmult2X = mult2X.argsort()
+
+    # add to a dictionary for later use
+    inds[clf.classes_[0]] = sortmult1X
+    inds[clf.classes_[1]] = sortmult2X
+             
+    return inds
+
+def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None,filterType=None):
     # data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
     # files = os.listdir(data_dir)
     # feats = [i for i in files if 'metadata' not in i]
@@ -51,12 +124,6 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None):
             objIX = META.index[(META['label'].isin([obj])) & (META['run_num'] == int(testRun))]
             otherObjIX = META.index[(META['label'].isin(other(obj))) & (META['run_num'] == int(testRun))]
 
-            # pull training and test data
-            trainX = FEAT[trainIX]
-            testX = FEAT[testIX]
-            trainY = META.iloc[trainIX].label
-            testY = META.iloc[testIX].label
-
             obj_X=FEAT[objIX]
             obj_Y=META.iloc[objIX].label
             otherObj_X=FEAT[otherObjIX]
@@ -68,12 +135,12 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None):
 
             s1 = clf1.score(obj_X, obj_Y)
             s2 = clf2.score(obj_X, obj_Y)
-            obj_evidence = s1 + s2
+            obj_evidence = np.mean([s1, s2])
             print('obj_evidence=',obj_evidence)
 
             s1 = clf1.score(otherObj_X, otherObj_Y)
             s2 = clf2.score(otherObj_X, otherObj_Y)
-            otherObj_evidence = s1 + s2
+            otherObj_evidence = np.mean([s1, s2])
             print('otherObj_evidence=',otherObj_evidence)
 
             testEvidence = testEvidence.append({
@@ -88,90 +155,15 @@ def getEvidence(sub,testEvidence,METADICT=None,FEATDICT=None):
 
     return testEvidence
 
-
 def minimalClass(filterType = 'noFilter',testRun = 6):
-    import os
-    import numpy as np
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    import sklearn
-    import joblib
-    import nibabel as nib
-    import itertools
 
-    from sklearn.linear_model import LogisticRegression
-
-    from IPython.display import clear_output
-
-    def normalize(X):
-        X = X - X.mean(0)
-        return X
-
-    def jitter(size,const=0):
-        jit = np.random.normal(0+const, 0.05, size)
-        X = np.zeros((size))
-        X = X + jit
-        return X
-
-    def other(target):
-        other_objs = [i for i in ['bed', 'bench', 'chair', 'table'] if i not in target]
-        return other_objs
-
-    def red_vox(n_vox, prop=0.1):
-        return int(np.ceil(n_vox * prop))
-
-    def get_inds(X, Y, pair, testRun=None):
-        
-        inds = {}
-        
-        # return relative indices
-        if testRun:
-            trainIX = Y.index[(Y['label'].isin(pair)) & (Y['run_num'] != int(testRun))]
-        else:
-            trainIX = Y.index[(Y['label'].isin(pair))]
-
-        # pull training and test data
-        trainX = X[trainIX]
-        trainY = Y.iloc[trainIX].label
-        
-        # Main classifier on 5 runs, testing on 6th
-        clf = LogisticRegression(penalty='l2',C=1, solver='lbfgs', max_iter=1000, 
-                                 multi_class='multinomial').fit(trainX, trainY)
-        B = clf.coef_[0]  # pull betas
-
-        # retrieve only the first object, then only the second object
-        if testRun:
-            obj1IX = Y.index[(Y['label'] == pair[0]) & (Y['run_num'] != int(testRun))]
-            obj2IX = Y.index[(Y['label'] == pair[1]) & (Y['run_num'] != int(testRun))]
-        else:
-            obj1IX = Y.index[(Y['label'] == pair[0])]
-            obj2IX = Y.index[(Y['label'] == pair[1])]
-        # Get the average of the first object, then the second object
-        obj1X = np.mean(X[obj1IX], 0)
-        obj2X = np.mean(X[obj2IX], 0)
-
-        # Build the importance map
-        mult1X = obj1X * B
-        mult2X = obj2X * B
-
-        # Sort these so that they are from least to most important for a given category.
-        sortmult1X = mult1X.argsort()[::-1]
-        sortmult2X = mult2X.argsort()
-
-        # add to a dictionary for later use
-        inds[clf.classes_[0]] = sortmult1X
-        inds[clf.classes_[1]] = sortmult2X
-                 
-        return inds
-
-    working_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/expScripts/recognition/neurosketch_realtime_preprocess/'
+    working_dir='/gpfs/milgram/project/turk-browne/projects/rtcloud_kp/FilterTesting/neurosketch_realtime_preprocess/'
     os.chdir(working_dir)
 
     data_dir=f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/features/{filterType}/recognition/'
     files = os.listdir(data_dir)
     feats = [i for i in files if 'metadata' not in i]
-    subjects = np.unique([i.split('_')[0] for i in feats])
-
+    subjects = np.unique([i.split('_')[0] for i in feats if i.split('_')[0] not in ['1121161','0112174']]). # 1121161 has a grid spacing issue and 0112174 lacks one of regressor file
     # If you want to reduce the number of subjects used for testing purposes
     subs=len(subjects)
     # subs=1
@@ -287,13 +279,61 @@ def minimalClass(filterType = 'noFilter',testRun = 6):
 
     testEvidence = pd.DataFrame(columns=['sub','testRun','targetAxis','obj','obj_evidence','otherObj_evidence','filterType'])
     for sub in subjects:
-        testEvidence=getEvidence(sub,testEvidence,METADICT=METADICT,FEATDICT=FEATDICT)
+        testEvidence=getEvidence(sub,testEvidence,METADICT=METADICT,FEATDICT=FEATDICT,filterType=filterType)
     print(accuracyContainer)
     return accuracyContainer,testEvidence
 
+
 # This is to get the model trained
-noFilter,testEvidence=minimalClass(filterType = 'noFilter')
-# UnscentedKalmanFilter_filter=minimalClass(filterType = 'UnscentedKalmanFilter_filter')
-# UnscentedKalmanFilter_smooth=minimalClass(filterType = 'UnscentedKalmanFilter_smooth')
-# highPassRealTime=minimalClass(filterType = 'highPassRealTime')
-# highPassBetweenRuns=minimalClass(filterType = 'highPassBetweenRuns')
+noFilter,testEvidence_noFilter=minimalClass(filterType = 'noFilter')
+highPassRealTime,testEvidence_highPassRealTime=minimalClass(filterType = 'highPassRealTime')
+highPassBetweenRuns,testEvidence_highPassBetweenRuns=minimalClass(filterType = 'highPassBetweenRuns')
+
+# Saves data
+noFilter=np.asarray(noFilter)
+np.save(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/noFilter.npy',noFilter)
+testEvidence_noFilter.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_noFilter.csv')
+highPassRealTime=np.asarray(highPassRealTime)
+np.save(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/highPassRealTime.npy',highPassRealTime)
+testEvidence_highPassRealTime.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassRealTime.csv')
+highPassBetweenRuns=np.asarray(highPassBetweenRuns)
+np.save(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/highPassBetweenRuns.npy',highPassBetweenRuns)
+testEvidence_highPassBetweenRuns.to_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassBetweenRuns.csv')
+
+# load and plot data
+testEvidence_noFilter=pd.read_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_noFilter.csv')
+testEvidence_highPassRealTime=pd.read_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassRealTime.csv')
+testEvidence_highPassBetweenRuns=pd.read_csv(f'/gpfs/milgram/project/turk-browne/jukebox/ntb/projects/sketchloop02/clf/testEvidence_highPassBetweenRuns.csv')
+def bar(L,labels=None,title=None):
+    import matplotlib.pyplot as plt
+    CTEs = [np.mean(i) for i in L]
+    error = [np.std(i) for i in L]
+    x_pos = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(10,10))
+    ax.bar(x_pos, CTEs, yerr=error, align='center', alpha=0.5, ecolor='black', capsize=10)
+    ax.set_ylabel('object evidence')
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(labels)
+    ax.set_title(title)
+    ax.yaxis.grid(True)
+    plt.tight_layout()
+    plt.xticks(rotation=30)
+    plt.show()
+bar([np.asarray(testEvidence_noFilter['obj_evidence']),
+    np.asarray(testEvidence_noFilter['otherObj_evidence']),
+    [],
+    np.asarray(testEvidence_highPassRealTime['obj_evidence']),
+    np.asarray(testEvidence_highPassRealTime['otherObj_evidence']),
+    [],
+    np.asarray(testEvidence_highPassBetweenRuns['obj_evidence']),
+    np.asarray(testEvidence_highPassBetweenRuns['otherObj_evidence'])],
+    labels=[
+    'noFilter_obj',
+    'noFilter_otherObj',
+    '',
+    'highPassRealTime_obj',
+    'highPassRealTime_otherObj',
+    '',
+    'highpassOffline_obj',
+    'highpassOffline_otherObj'],title=None)
+
